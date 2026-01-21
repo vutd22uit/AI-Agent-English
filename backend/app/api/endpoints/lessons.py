@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.db.base import get_db
 from app.core.dependencies import get_current_user, get_optional_current_user
@@ -126,7 +126,7 @@ async def generate_reading_lesson(
             id=uuid.uuid4(),
             name=request.topic,
             difficulty_level=request.cefr_level,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(topic)
         db.flush()
@@ -144,7 +144,7 @@ async def generate_reading_lesson(
         is_generated=True,
         content={"passage_type": request.passage_type},
         metadata=result.get("metadata", {}),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(lesson)
     db.flush()
@@ -158,7 +158,7 @@ async def generate_reading_lesson(
         reading_time_minutes=passage_data.get("reading_time_minutes", 15),
         passage_type=request.passage_type,
         vocabulary_complexity=passage_data.get("vocabulary_complexity", 5.0),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(reading_passage)
 
@@ -175,7 +175,7 @@ async def generate_reading_lesson(
             correct_answer=q_data.get("correct_answer"),
             explanation=q_data.get("explanation"),
             points=q_data.get("points", 1),
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(question)
         questions.append(question)
@@ -227,7 +227,7 @@ async def generate_listening_lesson(
             id=uuid.uuid4(),
             name=request.topic,
             difficulty_level=request.cefr_level,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(topic)
         db.flush()
@@ -244,7 +244,7 @@ async def generate_listening_lesson(
         is_generated=True,
         content={"script_text": script_data.get("script_text", "")},
         metadata=result.get("metadata", {}),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(lesson)
     db.flush()
@@ -262,7 +262,7 @@ async def generate_listening_lesson(
             correct_answer=q_data.get("correct_answer"),
             explanation=q_data.get("explanation"),
             points=q_data.get("points", 1),
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(question)
         questions.append(question)
@@ -311,7 +311,7 @@ async def generate_writing_prompt(
             id=uuid.uuid4(),
             name=request.topic,
             difficulty_level=request.cefr_level,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(topic)
         db.flush()
@@ -327,7 +327,7 @@ async def generate_writing_prompt(
         is_generated=True,
         content={"prompt_text": result.get("prompt_text", ""), "task_type": request.task_type},
         metadata=result,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(lesson)
     db.commit()
@@ -367,7 +367,7 @@ async def generate_speaking_prompt(
             id=uuid.uuid4(),
             name=request.topic,
             difficulty_level=request.cefr_level,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(topic)
         db.flush()
@@ -383,7 +383,7 @@ async def generate_speaking_prompt(
         is_generated=True,
         content={"prompt_text": result.get("prompt_text", ""), "part_number": request.part_number},
         metadata=result,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(lesson)
     db.commit()

@@ -3,7 +3,7 @@ User API endpoints for authentication and profile management
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 import uuid
 
 from app.db.base import get_db
@@ -52,7 +52,7 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         full_name=user_data.full_name,
         password_hash=get_password_hash(user_data.password),
         is_active=True,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(user)
     db.flush()  # Get user ID
@@ -61,7 +61,7 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     profile = UserProfile(
         id=uuid.uuid4(),
         user_id=user.id,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(profile)
 
@@ -72,7 +72,7 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         current_phase="foundation",
         weekly_goal_lessons=5,
         total_lessons_completed=0,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(roadmap)
 
@@ -124,7 +124,7 @@ async def login(login_data: UserLogin, db: Session = Depends(get_db)):
         )
 
     # Update last login
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now(timezone.utc)
     db.commit()
 
     # Generate access token
@@ -239,7 +239,7 @@ async def update_profile(
         profile = UserProfile(
             id=uuid.uuid4(),
             user_id=current_user.id,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.add(profile)
 
@@ -248,7 +248,7 @@ async def update_profile(
     for field, value in update_data.items():
         setattr(profile, field, value)
 
-    profile.updated_at = datetime.utcnow()
+    profile.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(profile)
 
@@ -279,7 +279,7 @@ async def create_profile(
         id=uuid.uuid4(),
         user_id=current_user.id,
         **profile_data.model_dump(exclude_unset=True),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(profile)
     db.commit()

@@ -3,7 +3,7 @@ Assessment Service for grading IELTS Writing and Speaking submissions
 """
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from app.services.ai_service import ai_service
@@ -50,7 +50,7 @@ class AssessmentService:
             skill_type="writing",
             submission_text=submission_text,
             word_count=word_count,
-            submitted_at=datetime.utcnow()
+            submitted_at=datetime.now(timezone.utc)
         )
         db.add(submission)
         db.flush()  # Get submission ID
@@ -158,7 +158,7 @@ class AssessmentService:
             audio_url=audio_url,
             transcription=transcription,
             word_count=word_count,
-            submitted_at=datetime.utcnow()
+            submitted_at=datetime.now(timezone.utc)
         )
         db.add(submission)
         db.flush()
@@ -249,7 +249,7 @@ class AssessmentService:
             overall_prof.band_score_equivalent = band_score
             overall_prof.proficiency_score = (band_score / 9.0) * 100
             overall_prof.sample_size += 1
-            overall_prof.last_assessed_at = datetime.utcnow()
+            overall_prof.last_assessed_at = datetime.now(timezone.utc)
         else:
             # Create new
             overall_prof = SkillProficiency(
@@ -260,7 +260,7 @@ class AssessmentService:
                 band_score_equivalent=band_score,
                 proficiency_score=(band_score / 9.0) * 100,
                 sample_size=1,
-                last_assessed_at=datetime.utcnow()
+                last_assessed_at=datetime.now(timezone.utc)
             )
             db.add(overall_prof)
 
@@ -277,7 +277,7 @@ class AssessmentService:
                     prof.band_score_equivalent = score
                     prof.proficiency_score = (score / 9.0) * 100
                     prof.sample_size += 1
-                    prof.last_assessed_at = datetime.utcnow()
+                    prof.last_assessed_at = datetime.now(timezone.utc)
                 else:
                     prof = SkillProficiency(
                         id=uuid.uuid4(),
@@ -287,7 +287,7 @@ class AssessmentService:
                         band_score_equivalent=score,
                         proficiency_score=(score / 9.0) * 100,
                         sample_size=1,
-                        last_assessed_at=datetime.utcnow()
+                        last_assessed_at=datetime.now(timezone.utc)
                     )
                     db.add(prof)
 
@@ -313,7 +313,7 @@ class AssessmentService:
             overall_prof.band_score_equivalent = band_score
             overall_prof.proficiency_score = (band_score / 9.0) * 100
             overall_prof.sample_size += 1
-            overall_prof.last_assessed_at = datetime.utcnow()
+            overall_prof.last_assessed_at = datetime.now(timezone.utc)
         else:
             overall_prof = SkillProficiency(
                 id=uuid.uuid4(),
@@ -323,7 +323,7 @@ class AssessmentService:
                 band_score_equivalent=band_score,
                 proficiency_score=(band_score / 9.0) * 100,
                 sample_size=1,
-                last_assessed_at=datetime.utcnow()
+                last_assessed_at=datetime.now(timezone.utc)
             )
             db.add(overall_prof)
 
@@ -340,7 +340,7 @@ class AssessmentService:
                     prof.band_score_equivalent = score
                     prof.proficiency_score = (score / 9.0) * 100
                     prof.sample_size += 1
-                    prof.last_assessed_at = datetime.utcnow()
+                    prof.last_assessed_at = datetime.now(timezone.utc)
                 else:
                     prof = SkillProficiency(
                         id=uuid.uuid4(),
@@ -350,7 +350,7 @@ class AssessmentService:
                         band_score_equivalent=score,
                         proficiency_score=(score / 9.0) * 100,
                         sample_size=1,
-                        last_assessed_at=datetime.utcnow()
+                        last_assessed_at=datetime.now(timezone.utc)
                     )
                     db.add(prof)
 
