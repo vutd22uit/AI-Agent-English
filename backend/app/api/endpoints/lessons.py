@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
+from typing import Optional, List
+from app.schemas.lesson import ReadingLesson, ListeningLesson, LessonGenerateRequest, AssessmentRequest, AssessmentResponse
+from app.services import llm
 
 router = APIRouter()
 
@@ -16,10 +18,29 @@ async def get_lessons(
     }
 
 
-@router.post("/generate/reading")
-async def generate_reading_lesson():
+@router.post("/generate/reading", response_model=ReadingLesson)
+async def generate_reading_lesson(request: LessonGenerateRequest):
     """Generate a reading lesson based on topic and level"""
-    return {"message": "Generate reading lesson endpoint"}
+    try:
+        return await llm.generate_reading_lesson(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate/listening", response_model=ListeningLesson)
+async def generate_listening_lesson(request: LessonGenerateRequest):
+    """Generate a listening lesson based on topic and level"""
+    try:
+        return await llm.generate_listening_lesson(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/assessment/grade", response_model=AssessmentResponse)
+async def grade_assessment(request: AssessmentRequest):
+    """Grade writing or speaking assessment using AI Teacher"""
+    try:
+        return await llm.grade_assessment(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{lesson_id}")
