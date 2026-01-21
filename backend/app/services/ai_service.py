@@ -1,11 +1,12 @@
 """
-AI Service for LLM Integration (OpenAI and Anthropic Claude)
+AI Service for LLM Integration (OpenAI, Anthropic Claude, and Google Gemini)
 """
 import json
 import time
 from typing import Dict, Any, Optional, List
 from openai import OpenAI
 from anthropic import Anthropic
+import google.generativeai as genai
 import os
 
 from app.core.config import settings
@@ -13,28 +14,36 @@ from app.prompts import IELTS_EXAMINER_SYSTEM_PROMPT
 
 
 class AIService:
-    """Service for interacting with AI models (OpenAI GPT and Anthropic Claude)"""
+    """Service for interacting with AI models (OpenAI GPT, Anthropic Claude, and Google Gemini)"""
 
     def __init__(self):
         self.openai_client = None
         self.anthropic_client = None
+        self.gemini_configured = False
 
-        # Initialize OpenAI if API key is available
+        # Initialize Gemini if API key is available (PRIORITY 1)
+        if settings.GEMINI_API_KEY:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            self.gemini_configured = True
+
+        # Initialize OpenAI if API key is available (PRIORITY 2)
         if settings.OPENAI_API_KEY:
             self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-        # Initialize Anthropic if API key is available
+        # Initialize Anthropic if API key is available (PRIORITY 3)
         if settings.ANTHROPIC_API_KEY:
             self.anthropic_client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 
     def _get_available_client(self) -> tuple[str, Any]:
-        """Get the first available AI client"""
-        if self.openai_client:
+        """Get the first available AI client (prioritize Gemini)"""
+        if self.gemini_configured:
+            return ("gemini", None)
+        elif self.openai_client:
             return ("openai", self.openai_client)
         elif self.anthropic_client:
             return ("anthropic", self.anthropic_client)
         else:
-            raise ValueError("No AI API keys configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY")
+            raise ValueError("No AI API keys configured. Please set GEMINI_API_KEY, OPENAI_API_KEY or ANTHROPIC_API_KEY")
 
     async def generate_completion(
         self,
@@ -63,7 +72,11 @@ class AIService:
         client_type, client = self._get_available_client()
 
         try:
-            if client_type == "openai":
+            if client_type == "gemini":
+                result = await self._gemini_completion(
+                    prompt, system_prompt, model, temperature, max_tokens, response_format
+                )
+            elif client_type == "openai":
                 result = await self._openai_completion(
                     client, prompt, system_prompt, model, temperature, max_tokens, response_format
                 )
@@ -79,6 +92,52 @@ class AIService:
 
         except Exception as e:
             raise Exception(f"AI generation failed: {str(e)}")
+
+    async def _gemini_completion(
+        self,
+        prompt: str,
+        system_prompt: Optional[str],
+        model: Optional[str],
+        temperature: float,
+        max_tokens: int,
+        response_format: Optional[str]
+    ) -> Dict[str, Any]:
+        """Google Gemini-specific completion"""
+        model_name = model or "gemini-1.5-pro"
+
+        # Create model with configuration
+        generation_config = {
+            "temperature": temperature,
+            "max_output_tokens": max_tokens,
+        }
+
+        # Add JSON mode if requested
+        if response_format == "json":
+            generation_config["response_mime_type"] = "application/json"
+
+        model_instance = genai.GenerativeModel(
+            model_name=model_name,
+            generation_config=generation_config
+        )
+
+        # Combine system prompt and user prompt
+        if system_prompt:
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+        else:
+            full_prompt = prompt
+
+        # Generate response
+        response = model_instance.generate_content(full_prompt)
+
+        # Estimate tokens (Gemini doesn't provide exact count in free tier)
+        estimated_tokens = len(full_prompt.split()) + len(response.text.split())
+
+        return {
+            "content": response.text,
+            "model_used": model_name,
+            "tokens_used": estimated_tokens,
+            "provider": "gemini"
+        }
 
     async def _openai_completion(
         self,
