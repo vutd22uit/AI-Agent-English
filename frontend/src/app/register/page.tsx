@@ -42,7 +42,7 @@ export default function RegisterPage() {
       })
 
       // Save token and user data
-      localStorage.setItem('token', response.data.access_token)
+      localStorage.setItem('access_token', response.data.access_token)
       localStorage.setItem('user', JSON.stringify(response.data.user))
 
       // Redirect to dashboard
