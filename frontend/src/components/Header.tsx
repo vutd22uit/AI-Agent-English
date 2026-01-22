@@ -7,10 +7,10 @@ export default function Header() {
   const pathname = usePathname()
 
   // Check if user is logged in (simplified, should use proper auth context)
-  const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('token')
+  const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('access_token')
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    localStorage.removeItem('access_token')
     localStorage.removeItem('user')
     window.location.href = '/login'
   }

@@ -392,7 +392,7 @@ async def generate_speaking_prompt(
     return LessonResponse.model_validate(lesson)
 
 
-@router.get("/recommended/{user_id}", response_model=List[LessonResponse])
+@router.get("/recommended/{user_id}")
 async def get_recommended_lessons(
     user_id: uuid.UUID,
     limit: int = Query(10, ge=1, le=50),
@@ -404,7 +404,11 @@ async def get_recommended_lessons(
 
     - Requires authentication
     - Returns personalized lesson recommendations
-    - Based on skill proficiency and learning history
+    - Uses adaptive algorithm based on:
+      - Skill proficiency gaps
+      - Learning history
+      - Optimal difficulty progression
+      - Balanced skill development
     """
     # Verify user can only get their own recommendations
     if user_id != current_user.id:
@@ -413,16 +417,32 @@ async def get_recommended_lessons(
             detail="Not authorized to view recommendations for this user"
         )
 
-    # TODO: Implement adaptive recommendation algorithm
-    # For now, return recent lessons that match user's level
-    from app.models.user import UserProfile
+    from app.services.recommendation_service import get_user_recommendations
 
-    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
-    cefr_level = profile.current_cefr_level if profile else "B1"
+    try:
+        recommendations = get_user_recommendations(db, user_id, limit)
+        return recommendations
+    except Exception as e:
+        # Fallback to simple recommendations if algorithm fails
+        from app.models.user import UserProfile
 
-    # Get recent lessons at user's level
-    lessons = db.query(Lesson).filter(
-        Lesson.cefr_level == cefr_level
-    ).order_by(Lesson.created_at.desc()).limit(limit).all()
+        profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+        cefr_level = profile.current_cefr_level if profile else "B1"
 
-    return [LessonResponse.model_validate(lesson) for lesson in lessons]
+        lessons = db.query(Lesson).filter(
+            Lesson.cefr_level == cefr_level
+        ).order_by(Lesson.created_at.desc()).limit(limit).all()
+
+        return [
+            {
+                "id": str(lesson.id),
+                "title": lesson.title,
+                "skill_type": lesson.skill_type,
+                "cefr_level": lesson.cefr_level,
+                "estimated_duration_minutes": lesson.estimated_duration_minutes,
+                "reason": "Matches your current level",
+                "benefit_score": 50.0,
+                "skill_gaps_addressed": [lesson.skill_type]
+            }
+            for lesson in lessons
+        ]
